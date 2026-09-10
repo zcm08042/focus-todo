@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Focus Todo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">F</div>
+        <div>
+          <div class="brand-name">Focus Todo</div>
+          <div class="brand-sub">本地待办</div>
+        </div>
+      </div>
+
+      <nav class="nav" id="nav">
+        <button class="nav-item active" data-view="today">今日</button>
+        <button class="nav-item" data-view="all">全部</button>
+        <button class="nav-item" data-view="done">已完成</button>
+        <button class="nav-item" data-view="settings">设置</button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="stat-label" id="statLabel">今日完成</div>
+        <div class="stat-value" id="statValue">0 / 0</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="viewTitle">今日</h1>
+          <p class="date-line" id="dateLine"></p>
+        </div>
+        <div class="top-actions">
+          <button class="icon-btn" id="themeBtn" title="切换外观">◐</button>
+        </div>
+      </header>
+
+      <section class="composer" id="composer">
+        <input id="input" type="text" maxlength="200" placeholder="添加一项待办…" autocomplete="off" />
+        <select id="priority" title="优先级">
+          <option value="high">高</option>
+          <option value="medium" selected>中</option>
+          <option value="low">低</option>
+        </select>
+        <input id="date" type="date" title="日期" />
+        <button id="addBtn" class="primary-btn">添加</button>
+      </section>
+
+      <p class="hint" id="hint"></p>
+
+      <section class="list-wrap" id="listView">
+        <ul class="todo-list" id="list"></ul>
+        <div class="empty" id="empty" hidden>
+          <div class="empty-icon">✓</div>
+          <p class="empty-title" id="emptyTitle">今天还没有待办</p>
+          <p class="empty-desc" id="emptyDesc">从上面添加一项开始吧</p>
+        </div>
+      </section>
+
+      <section class="settings" id="settingsView" hidden>
+        <div class="card">
+          <h2>外观</h2>
+          <label class="row">
+            <span>主题</span>
+            <select id="themeSelect">
+              <option value="light">浅色</option>
+              <option value="dark">深色</option>
+              <option value="system">跟随系统</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>打开时显示</span>
+            <select id="defaultView">
+              <option value="today">今日</option>
+              <option value="all">全部</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>新建默认优先级</span>
+            <select id="defaultPriority">
+              <option value="high">高</option>
+              <option value="medium">中</option>
+              <option value="low">低</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="card">
+          <h2>本地数据</h2>
+          <p class="muted">保存在本机，不会上传。</p>
+          <div class="btn-row">
+            <button class="ghost-btn" id="exportBtn">导出为 JSON</button>
+            <button class="ghost-btn" id="importBtn">从 JSON 导入</button>
+            <button class="danger-btn" id="clearDoneBtn">清空已完成任务</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>关于</h2>
+          <p class="muted">版本 1.0.0</p>
+          <p class="muted">本地存储 · 无需账号</p>
+          <p class="muted keys">Enter 添加 · Ctrl+N 聚焦 · Esc 关闭弹窗</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="editDialog">
+    <form method="dialog" class="dialog-form" id="editForm">
+      <h2>编辑待办</h2>
+      <label>
+        内容
+        <input id="editText" type="text" maxlength="200" required />
+      </label>
+      <label>
+        优先级
+        <select id="editPriority">
+          <option value="high">高</option>
+          <option value="medium">中</option>
+          <option value="low">低</option>
+        </select>
+      </label>
+      <label>
+        日期
+        <input id="editDate" type="date" />
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="ghost-btn" id="editCancel">取消</button>
+        <button type="submit" class="primary-btn">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirmDialog">
+    <form method="dialog" class="dialog-form">
+      <h2 id="confirmTitle">删除待办？</h2>
+      <p class="muted" id="confirmBody">删除后无法恢复。</p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost-btn" id="confirmCancel">取消</button>
+        <button type="submit" class="danger-btn" id="confirmOk">删除</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
