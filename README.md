@@ -45,12 +45,6 @@ npm install
 npm start
 ```
 
-可选打包：
-
-```bash
-npm run dist
-```
-
 ## 快捷键
 
 | 快捷键 | 作用 |
@@ -59,7 +53,6 @@ npm run dist
 | Ctrl/Cmd + N | 聚焦添加输入框 |
 | Ctrl/Cmd + F | 聚焦搜索 |
 | Ctrl/Cmd + 1 / 2 / 3 | 切换 今日 / 全部 / 已完成 |
-| Esc | 关闭弹窗 |
 
 ## 技术栈
 
@@ -78,8 +71,6 @@ focus-todo/
 │   ├── index.html       # 界面结构
 │   ├── styles.css       # 样式与主题
 │   └── renderer.js      # 交互逻辑
-├── assets/
-│   └── icon.svg         # 应用图标
 ├── package.json
 └── README.md
 ```

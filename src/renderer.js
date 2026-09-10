@@ -1,6 +1,10 @@
 const PRIORITIES = ["high", "medium", "low"];
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
 const PRIORITY_LABEL = { high: "高", medium: "中", low: "低" };
+const EMPTY_FILTERED = {
+  title: "没有匹配的待办",
+  desc: "试试调整搜索词或筛选条件",
+};
 
 const state = {
   todos: [],
@@ -71,26 +75,18 @@ const viewMeta = {
     title: "今日",
     emptyTitle: "今天还没有待办",
     emptyDesc: "从上面添加一项开始吧",
-    emptyFiltered: "没有匹配的待办",
-    emptyFilteredDesc: "试试调整搜索词或筛选条件",
   },
   all: {
     title: "全部",
     emptyTitle: "还没有待办",
     emptyDesc: "先记下一件要做的事",
-    emptyFiltered: "没有匹配的待办",
-    emptyFilteredDesc: "试试调整搜索词或筛选条件",
   },
   done: {
     title: "已完成",
     emptyTitle: "还没有完成的任务",
     emptyDesc: "完成后会出现在这里",
-    emptyFiltered: "没有匹配的已完成任务",
-    emptyFilteredDesc: "试试调整搜索词或筛选条件",
   },
-  settings: {
-    title: "设置",
-  },
+  settings: { title: "设置" },
 };
 
 function todayISO() {
@@ -112,33 +108,6 @@ function uid() {
 
 function clampText(text) {
   return String(text || "").trim().slice(0, 200);
-}
-
-function normalizeTodo(raw, index = 0) {
-  if (!raw || typeof raw !== "object") return null;
-  const text = clampText(raw.text);
-  if (!text) return null;
-  const priority = PRIORITIES.includes(raw.priority) ? raw.priority : "medium";
-  const date =
-    typeof raw.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.date)
-      ? raw.date
-      : null;
-  const createdAt =
-    typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString();
-  return {
-    id: typeof raw.id === "string" && raw.id ? raw.id : `${uid()}-${index}`,
-    text,
-    priority,
-    date,
-    done: Boolean(raw.done),
-    createdAt,
-    updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : createdAt,
-  };
-}
-
-function normalizeTodos(list) {
-  if (!Array.isArray(list)) return [];
-  return list.map(normalizeTodo).filter(Boolean);
 }
 
 function showToast(message) {
@@ -166,9 +135,8 @@ function applyTheme(theme) {
 
 function loadSettings() {
   try {
-    const raw = localStorage.getItem("focus-todo-settings");
-    if (raw) {
-      const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(localStorage.getItem("focus-todo-settings"));
+    if (parsed) {
       state.settings = {
         theme: ["light", "dark", "system"].includes(parsed.theme)
           ? parsed.theme
@@ -181,9 +149,7 @@ function loadSettings() {
           : "medium",
       };
     }
-  } catch {
-    /* keep defaults */
-  }
+  } catch {}
 
   el.themeSelect.value = state.settings.theme;
   el.defaultView.value = state.settings.defaultView;
@@ -195,16 +161,14 @@ function loadSettings() {
 function saveSettings() {
   try {
     localStorage.setItem("focus-todo-settings", JSON.stringify(state.settings));
-  } catch {
-    /* ignore quota errors */
-  }
+  } catch {}
   applyTheme(state.settings.theme);
 }
 
 async function persist() {
   const result = await window.api.saveTodos(state.todos);
-  if (result && result.ok) {
-    state.todos = result.todos || state.todos;
+  if (result?.ok) {
+    state.todos = result.todos;
     return true;
   }
   showToast("保存失败，请重试");
@@ -224,21 +188,19 @@ function matchesFilters(todo) {
 }
 
 function sortTodos(list) {
-  const copy = [...list];
   const mode = state.filters.sort;
-  copy.sort((a, b) => {
+  return [...list].sort((a, b) => {
     if (mode === "priority") {
       const diff = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
-      if (diff !== 0) return diff;
+      if (diff) return diff;
     }
     if (mode === "date") {
       const ad = a.date || "9999-12-31";
       const bd = b.date || "9999-12-31";
       if (ad !== bd) return ad < bd ? -1 : 1;
     }
-    return a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0;
+    return a.createdAt < b.createdAt ? 1 : -1;
   });
-  return copy;
 }
 
 function baseTodosForView() {
@@ -262,19 +224,14 @@ function visibleTodos() {
   return sortTodos(baseTodosForView().filter(matchesFilters));
 }
 
-function updateNavCounts() {
-  const today = todayISO();
-  const todayCount = state.todos.filter((t) => !t.done && t.date === today).length;
-  const allCount = state.todos.filter((t) => !t.done).length;
-  const doneCount = state.todos.filter((t) => t.done).length;
-
-  el.navCountToday.textContent = todayCount ? String(todayCount) : "";
-  el.navCountAll.textContent = allCount ? String(allCount) : "";
-  el.navCountDone.textContent = doneCount ? String(doneCount) : "";
-}
-
 function updateStats() {
-  updateNavCounts();
+  const today = todayISO();
+  el.navCountToday.textContent =
+    String(state.todos.filter((t) => !t.done && t.date === today).length) || "";
+  el.navCountAll.textContent =
+    String(state.todos.filter((t) => !t.done).length) || "";
+  el.navCountDone.textContent =
+    String(state.todos.filter((t) => t.done).length) || "";
 
   if (state.view === "settings") {
     el.statLabel.textContent = "本地存储";
@@ -283,14 +240,13 @@ function updateStats() {
     return;
   }
 
-  const todayAll = state.todos.filter((t) => t.date === todayISO());
+  const todayAll = state.todos.filter((t) => t.date === today);
   const done = todayAll.filter((t) => t.done).length;
-  const total = todayAll.length;
-  const pct = total ? Math.round((done / total) * 100) : 0;
-
   el.statLabel.textContent = "今日完成";
-  el.statValue.textContent = `${done} / ${total}`;
-  el.progressBar.style.width = `${pct}%`;
+  el.statValue.textContent = `${done} / ${todayAll.length}`;
+  el.progressBar.style.width = todayAll.length
+    ? `${Math.round((done / todayAll.length) * 100)}%`
+    : "0%";
 }
 
 function createTodoItem(todo, today) {
@@ -305,13 +261,7 @@ function createTodoItem(todo, today) {
   check.setAttribute("aria-label", todo.done ? "标记为未完成" : "标记为完成");
   check.addEventListener("change", async () => {
     todo.done = check.checked;
-    todo.updatedAt = new Date().toISOString();
-    const ok = await persist();
-    if (ok) render();
-    else {
-      check.checked = !todo.done;
-      todo.done = !check.checked;
-    }
+    if (await persist()) render();
   });
 
   const body = document.createElement("div");
@@ -326,7 +276,7 @@ function createTodoItem(todo, today) {
 
   const pChip = document.createElement("span");
   pChip.className = `chip ${todo.priority}`;
-  pChip.textContent = PRIORITY_LABEL[todo.priority] || "中";
+  pChip.textContent = PRIORITY_LABEL[todo.priority];
   meta.appendChild(pChip);
 
   if (todo.date) {
@@ -341,8 +291,7 @@ function createTodoItem(todo, today) {
     meta.appendChild(dChip);
   }
 
-  body.appendChild(text);
-  body.appendChild(meta);
+  body.append(text, meta);
 
   const actions = document.createElement("div");
   actions.className = "item-actions";
@@ -364,8 +313,7 @@ function createTodoItem(todo, today) {
       okText: "删除",
       onOk: async () => {
         state.todos = state.todos.filter((t) => t.id !== todo.id);
-        const ok = await persist();
-        if (ok) {
+        if (await persist()) {
           render();
           showToast("已删除");
         }
@@ -373,12 +321,8 @@ function createTodoItem(todo, today) {
     })
   );
 
-  actions.appendChild(editBtn);
-  actions.appendChild(delBtn);
-
-  li.appendChild(check);
-  li.appendChild(body);
-  li.appendChild(actions);
+  actions.append(editBtn, delBtn);
+  li.append(check, body, actions);
   return li;
 }
 
@@ -389,23 +333,17 @@ function renderList() {
 
   if (!todos.length) {
     const meta = viewMeta[state.view];
+    const filtered = hasActiveFilter();
     el.empty.hidden = false;
-    if (hasActiveFilter()) {
-      el.emptyTitle.textContent = meta.emptyFiltered;
-      el.emptyDesc.textContent = meta.emptyFilteredDesc;
-    } else {
-      el.emptyTitle.textContent = meta.emptyTitle;
-      el.emptyDesc.textContent = meta.emptyDesc;
-    }
+    el.emptyTitle.textContent = filtered ? EMPTY_FILTERED.title : meta.emptyTitle;
+    el.emptyDesc.textContent = filtered ? EMPTY_FILTERED.desc : meta.emptyDesc;
     return;
   }
 
   el.empty.hidden = true;
-  const frag = document.createDocumentFragment();
   for (const todo of todos) {
-    frag.appendChild(createTodoItem(todo, today));
+    el.list.appendChild(createTodoItem(todo, today));
   }
-  el.list.appendChild(frag);
 }
 
 function render() {
@@ -452,29 +390,24 @@ async function addTodo() {
     return;
   }
 
-  const todo = {
+  state.todos.unshift({
     id: uid(),
     text,
     priority: el.priority.value,
     date: el.date.value || null,
     done: false,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  });
 
-  const next = [todo, ...state.todos];
-  const previous = state.todos;
-  state.todos = next;
-  const ok = await persist();
-  if (!ok) {
-    state.todos = previous;
-    return;
-  }
+  if (!(await persist())) return;
 
   el.input.value = "";
   setHint("");
   if (state.view === "done") state.view = "today";
-  if (state.filters.priority !== "all" && state.filters.priority !== todo.priority) {
+  if (
+    state.filters.priority !== "all" &&
+    state.filters.priority !== el.priority.value
+  ) {
     state.filters.priority = "all";
     syncFilterChips();
   }
@@ -526,8 +459,8 @@ function bindEvents() {
 
   el.themeBtn.addEventListener("click", () => {
     const order = ["light", "dark", "system"];
-    const idx = order.indexOf(state.settings.theme);
-    state.settings.theme = order[(idx + 1) % order.length];
+    state.settings.theme =
+      order[(order.indexOf(state.settings.theme) + 1) % order.length];
     el.themeSelect.value = state.settings.theme;
     saveSettings();
   });
@@ -550,14 +483,14 @@ function bindEvents() {
 
   el.exportBtn.addEventListener("click", async () => {
     const res = await window.api.exportTodos();
-    if (res.ok) showToast(`已导出 ${res.count ?? ""} 条`.trim());
+    if (res.ok) showToast(`已导出 ${res.count} 条`);
     else if (!res.canceled) showToast(res.error || "导出失败");
   });
 
   el.importBtn.addEventListener("click", async () => {
     const res = await window.api.importTodos();
     if (res.ok) {
-      state.todos = normalizeTodos(res.todos);
+      state.todos = res.todos;
       render();
       showToast(`已导入 ${state.todos.length} 条待办`);
     } else if (!res.canceled) {
@@ -577,8 +510,7 @@ function bindEvents() {
       okText: "清空",
       onOk: async () => {
         state.todos = state.todos.filter((t) => !t.done);
-        const ok = await persist();
-        if (ok) {
+        if (await persist()) {
           render();
           showToast(`已清除 ${doneCount} 条`);
         }
@@ -595,18 +527,10 @@ function bindEvents() {
     if (!text) return;
     const todo = state.todos.find((t) => t.id === state.editingId);
     if (!todo) return;
-
-    const prev = { ...todo };
     todo.text = text;
     todo.priority = el.editPriority.value;
     todo.date = el.editDate.value || null;
-    todo.updatedAt = new Date().toISOString();
-
-    const ok = await persist();
-    if (!ok) {
-      Object.assign(todo, prev);
-      return;
-    }
+    if (!(await persist())) return;
     el.editDialog.close();
     render();
     showToast("已保存");
@@ -615,9 +539,7 @@ function bindEvents() {
   el.confirmDialog.addEventListener("close", async () => {
     const action = state.confirmAction;
     state.confirmAction = null;
-    if (el.confirmDialog.returnValue === "ok" && action) {
-      await action();
-    }
+    if (el.confirmDialog.returnValue === "ok" && action) await action();
   });
 
   el.editDialog.addEventListener("close", () => {
@@ -631,11 +553,6 @@ function bindEvents() {
     });
 
   window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      if (el.editDialog.open) el.editDialog.close();
-      if (el.confirmDialog.open) el.confirmDialog.close();
-    }
-
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === "n") {
       e.preventDefault();
@@ -645,7 +562,6 @@ function bindEvents() {
       }
       el.input.focus();
     }
-
     if (mod && e.key.toLowerCase() === "f") {
       e.preventDefault();
       if (state.view === "settings") {
@@ -654,11 +570,9 @@ function bindEvents() {
       }
       el.search.focus();
     }
-
     if (mod && ["1", "2", "3"].includes(e.key)) {
       e.preventDefault();
-      const map = { "1": "today", "2": "all", "3": "done" };
-      state.view = map[e.key];
+      state.view = { "1": "today", "2": "all", "3": "done" }[e.key];
       render();
     }
   });
@@ -666,9 +580,8 @@ function bindEvents() {
 
 async function init() {
   loadSettings();
-  const loaded = await window.api.loadTodos();
-  state.todos = normalizeTodos(loaded);
-  state.view = state.settings.defaultView || "today";
+  state.todos = await window.api.loadTodos();
+  state.view = state.settings.defaultView;
   el.date.value = todayISO();
   syncFilterChips();
   bindEvents();

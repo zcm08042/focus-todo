@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeImage } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
@@ -10,10 +10,6 @@ function getDataFile() {
   return path.join(app.getPath("userData"), "todos.json");
 }
 
-function getIconPath() {
-  return path.join(__dirname, "assets", "icon.svg");
-}
-
 function sanitizeTodo(raw, index) {
   if (!raw || typeof raw !== "object") return null;
   const text = typeof raw.text === "string" ? raw.text.trim().slice(0, 200) : "";
@@ -23,21 +19,17 @@ function sanitizeTodo(raw, index) {
     typeof raw.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.date)
       ? raw.date
       : null;
-  const done = Boolean(raw.done);
-  const id =
-    typeof raw.id === "string" && raw.id
-      ? raw.id
-      : `imported-${Date.now().toString(36)}-${index}`;
-  const createdAt =
-    typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString();
   return {
-    id,
+    id:
+      typeof raw.id === "string" && raw.id
+        ? raw.id
+        : `${Date.now().toString(36)}-${index}`,
     text,
     priority,
     date,
-    done,
-    createdAt,
-    updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : createdAt,
+    done: Boolean(raw.done),
+    createdAt:
+      typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString(),
   };
 }
 
@@ -48,9 +40,9 @@ function sanitizeTodos(list) {
 
 function loadTodos() {
   try {
-    const file = getDataFile();
-    if (!fs.existsSync(file)) return [];
-    return sanitizeTodos(JSON.parse(fs.readFileSync(file, "utf8")));
+    return sanitizeTodos(
+      JSON.parse(fs.readFileSync(getDataFile(), "utf8"))
+    );
   } catch {
     return [];
   }
@@ -60,20 +52,11 @@ function saveTodos(todos) {
   const clean = sanitizeTodos(todos);
   const file = getDataFile();
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const tmp = `${file}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(clean, null, 2), "utf8");
-  fs.renameSync(tmp, file);
+  fs.writeFileSync(file, JSON.stringify(clean, null, 2), "utf8");
   return clean;
 }
 
 function createWindow() {
-  let icon;
-  try {
-    icon = nativeImage.createFromPath(getIconPath());
-  } catch {
-    icon = undefined;
-  }
-
   mainWindow = new BrowserWindow({
     width: 960,
     height: 680,
@@ -82,12 +65,10 @@ function createWindow() {
     title: "Focus Todo",
     backgroundColor: "#f6f5f2",
     autoHideMenuBar: true,
-    icon,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      spellcheck: false,
     },
   });
 
@@ -112,8 +93,7 @@ ipcMain.handle("todos:load", () => loadTodos());
 
 ipcMain.handle("todos:save", (_event, todos) => {
   try {
-    const clean = saveTodos(todos);
-    return { ok: true, todos: clean };
+    return { ok: true, todos: saveTodos(todos) };
   } catch (err) {
     return { ok: false, error: err.message || "保存失败" };
   }
@@ -143,10 +123,9 @@ ipcMain.handle("app:import", async () => {
       properties: ["openFile"],
     });
     if (canceled || !filePaths[0]) return { ok: false, canceled: true };
-
     const data = JSON.parse(fs.readFileSync(filePaths[0], "utf8"));
-    const todos = sanitizeTodos(data);
     if (!Array.isArray(data)) throw new Error("bad format");
+    const todos = sanitizeTodos(data);
     saveTodos(todos);
     return { ok: true, todos };
   } catch {
