@@ -1,21 +1,66 @@
 {
   "name": "focus-todo",
   "version": "1.3.0",
-  "description": "一个只存在于本机的简洁桌面待办应用",
+  "description": "Focus Todo — 只存在于本机的简洁桌面待办",
   "main": "main.js",
+  "author": {
+    "name": "zcm08042",
+    "email": "zcm08042@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/zcm08042/focus-todo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zcm08042/focus-todo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zcm08042/focus-todo/issues"
+  },
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --win"
   },
   "keywords": [
     "todo",
     "electron",
     "desktop",
-    "portfolio"
+    "portfolio",
+    "focus-todo"
   ],
-  "author": "zcm08042",
-  "license": "MIT",
   "devDependencies": {
-    "electron": "^33.2.0"
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.zcm08042.focustodo",
+    "productName": "Focus Todo",
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/icon.png"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Focus Todo"
+    }
   },
   "allowScripts": {
     "electron@33.4.11": true

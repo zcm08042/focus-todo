@@ -1,49 +1,75 @@
 # Focus Todo
 
-一个只存在于本机的简洁桌面待办应用。  
-Electron + 原生 HTML/CSS/JS，适合放入简历与作品集。
+> **Focus Todo** — 只存在于本机的简洁桌面待办。  
+> 不联网、不上传、无需账号。打开就能记，关掉数据还在本机。
+
+一个用 **Electron + 原生 HTML/CSS/JS** 写的桌面效率小应用，适合日常个人待办，也适合作为作品集项目展示。
 
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![electron](https://img.shields.io/badge/Electron-33-blue)
-![platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+![version](https://img.shields.io/badge/version-1.3.0-blue)
+![platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-## 为什么做这个
+## 名称说明
 
-Focus Todo 不追求功能堆砌，而是完整走通一个桌面产品的最小闭环：
+| 项 | 内容 |
+|----|------|
+| 项目名 | Focus Todo |
+| 应用名 | Focus Todo |
+| 包名 | `focus-todo` |
+| 定位 | 本地优先的桌面待办（Local-first desktop todo） |
+| 一句话 | 专注今天该做的事，数据只留在你的电脑上 |
 
-- 界面干净，深浅色主题
-- 本地持久化，数据不上传
-- 添加 / 完成 / 编辑 / 删除
-- 搜索、优先级筛选、排序
-- 导入导出 JSON
-- 快捷键操作
+## 简介
 
-## 功能
+Focus Todo 把「记事 → 排期 → 完成 → 复盘」收进一个安静的桌面窗口：
+
+1. **记**：快速添加待办，设优先级和日期  
+2. **看**：今日 / 全部 / 到期分组，一眼知道要做什么  
+3. **做**：勾选完成，启动时如有到期任务会系统提醒  
+4. **盘**：统计页看近 7 天完成情况和未完成分布  
+
+**设计原则：** 少即是多。能本地就不联网，能原生控件就不堆依赖，界面干净可扫读。
+
+## 功能一览
 
 | 模块 | 说明 |
 |------|------|
-| 今日 / 全部 / 已完成 / 到期 / 统计 | 按场景管理任务；到期分组；完成统计 |
-| 统计 | 汇总数字、近 7 天完成柱状图、未完成优先级 |
-| 优先级 | 高 / 中 / 低，可筛选可排序 |
-| 日期 | 支持设置日期，过期自动标记 |
-| 启动通知 | 有到期或过期任务时，系统通知一次 |
-| 搜索 | 按内容即时过滤 |
+| 今日 / 全部 / 已完成 / 到期 / 统计 | 多视图管理任务 |
+| 到期视图 | 已过期 → 今天 → 以后 分组 |
+| 统计 | 汇总、近 7 天完成柱状图、优先级分布 |
+| 优先级 | 高 / 中 / 低，可筛选排序 |
+| 日期 | 设置到期日，过期高亮 |
+| 启动通知 | 有到期/过期任务时弹一次系统通知 |
+| 搜索筛选 | 按内容即时过滤 |
 | 主题 | 浅色 / 深色 / 跟随系统 |
-| 数据 | 本地 JSON；可导出备份、导入恢复 |
+| 数据 | 本地 JSON；可导出 / 导入备份 |
 | 快捷键 | Enter、Ctrl+N、Ctrl+F、Ctrl+1–5 |
 
-## 界面预览
+## 界面
 
-打开应用后可看到侧栏导航、添加区、筛选栏与任务列表。  
-深色模式可在右上角一键切换。
+- 左侧导航 + 主内容区  
+- 添加区：内容、优先级、日期  
+- 右上角一键切换深浅色  
 
-## 快速开始
+## 下载安装（Windows）
+
+发布页：https://github.com/zcm08042/focus-todo/releases  
+
+从 Release 下载安装包后双击安装，或克隆仓库后自行打包：
+
+```powershell
+git clone https://github.com/zcm08042/focus-todo.git
+cd focus-todo
+npm install
+npm start          # 开发运行
+npm run dist       # 打包 Windows 安装包（输出到 dist/）
+```
+
+## 快速开始（开发）
 
 ```bash
-# 安装依赖
 npm install
-
-# 启动
 npm start
 ```
 
@@ -54,14 +80,14 @@ npm start
 | Enter | 添加待办 |
 | Ctrl/Cmd + N | 聚焦添加输入框 |
 | Ctrl/Cmd + F | 聚焦搜索 |
-| Ctrl/Cmd + 1 / 2 / 3 | 切换 今日 / 全部 / 已完成 |
+| Ctrl/Cmd + 1–5 | 切换 今日 / 全部 / 已完成 / 到期 / 统计 |
 
 ## 技术栈
 
-- Electron 33
-- 原生 HTML / CSS / JavaScript
-- 主进程本地文件读写（`userData/todos.json`）
-- 渲染进程无 Node 权限（contextIsolation + preload）
+- Electron 33  
+- 原生 HTML / CSS / JavaScript  
+- 主进程本地文件读写（`userData/todos.json`）  
+- 渲染进程无 Node 权限（contextIsolation + preload）  
 
 ## 项目结构
 
@@ -73,15 +99,21 @@ focus-todo/
 │   ├── index.html       # 界面结构
 │   ├── styles.css       # 样式与主题
 │   └── renderer.js      # 交互逻辑
+├── assets/
+│   └── icon.png         # 应用图标
 ├── package.json
 └── README.md
 ```
 
 ## 隐私
 
-- 所有数据保存在本机应用目录
-- 无账号、无云同步、无埋点
-- 可随时导出为 JSON 备份
+- 所有数据保存在本机应用目录  
+- 无账号、无云同步、无埋点  
+- 可随时导出为 JSON 备份  
+
+## 作者
+
+**zcm08042** · https://github.com/zcm08042  
 
 ## License
 

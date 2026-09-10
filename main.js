@@ -67,6 +67,7 @@ function createWindow() {
     title: "Focus Todo",
     backgroundColor: "#f6f5f2",
     autoHideMenuBar: true,
+    icon: path.join(__dirname, "assets", "icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
