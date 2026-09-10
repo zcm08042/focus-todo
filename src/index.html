@@ -39,6 +39,9 @@
           <span class="nav-icon">✓</span>已完成
           <span class="nav-count" id="navCountDone"></span>
         </button>
+        <button class="nav-item" data-view="stats" type="button">
+          <span class="nav-icon">▥</span>统计
+        </button>
         <button class="nav-item" data-view="settings" type="button">
           <span class="nav-icon">⚙</span>设置
         </button>
@@ -108,6 +111,18 @@
         </div>
       </section>
 
+      <section class="stats" id="statsView" hidden>
+        <div class="stats-grid" id="statsCards"></div>
+        <div class="card">
+          <h2>近 7 天完成</h2>
+          <div class="chart" id="weekChart" aria-label="近七天完成数量柱状图"></div>
+        </div>
+        <div class="card">
+          <h2>未完成优先级</h2>
+          <div class="bars" id="priorityBars"></div>
+        </div>
+      </section>
+
       <section class="settings" id="settingsView" hidden>
         <div class="card">
           <h2>外观</h2>
@@ -152,14 +167,14 @@
             <div><kbd>Enter</kbd><span>添加待办</span></div>
             <div><kbd>Ctrl/Cmd + N</kbd><span>聚焦输入框</span></div>
             <div><kbd>Ctrl/Cmd + F</kbd><span>聚焦搜索</span></div>
-            <div><kbd>Ctrl/Cmd + 1/2/3/4</kbd><span>切换 今日/全部/已完成/到期</span></div>
+            <div><kbd>Ctrl/Cmd + 1/2/3/4/5</kbd><span>切换各视图</span></div>
             <div><kbd>Esc</kbd><span>关闭弹窗</span></div>
           </div>
         </div>
 
         <div class="card">
           <h2>关于</h2>
-          <p class="muted">Focus Todo · 版本 1.2.0</p>
+          <p class="muted">Focus Todo · 版本 1.3.0</p>
           <p class="muted">Electron 桌面应用 · 本地存储 · 无需账号</p>
         </div>
       </section>

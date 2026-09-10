@@ -30,6 +30,8 @@ function sanitizeTodo(raw, index) {
     done: Boolean(raw.done),
     createdAt:
       typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString(),
+    completedAt:
+      typeof raw.completedAt === "string" ? raw.completedAt : null,
   };
 }
 

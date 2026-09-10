@@ -40,6 +40,10 @@ const el = {
   emptyTitle: document.getElementById("emptyTitle"),
   emptyDesc: document.getElementById("emptyDesc"),
   listView: document.getElementById("listView"),
+  statsView: document.getElementById("statsView"),
+  statsCards: document.getElementById("statsCards"),
+  weekChart: document.getElementById("weekChart"),
+  priorityBars: document.getElementById("priorityBars"),
   settingsView: document.getElementById("settingsView"),
   composer: document.getElementById("composer"),
   toolbar: document.getElementById("toolbar"),
@@ -92,6 +96,7 @@ const viewMeta = {
     emptyTitle: "没有到期任务",
     emptyDesc: "给待办设置日期后，会出现在这里",
   },
+  stats: { title: "统计" },
   settings: { title: "设置" },
 };
 
@@ -272,6 +277,7 @@ function createTodoItem(todo, today) {
   check.setAttribute("aria-label", todo.done ? "标记为未完成" : "标记为完成");
   check.addEventListener("change", async () => {
     todo.done = check.checked;
+    todo.completedAt = check.checked ? new Date().toISOString() : null;
     if (await persist()) render();
   });
 
@@ -401,6 +407,87 @@ function renderDueList(today) {
   }
 }
 
+function dayKey(iso) {
+  return String(iso || "").slice(0, 10);
+}
+
+function renderStats() {
+  const today = todayISO();
+  const done = state.todos.filter((t) => t.done);
+  const active = state.todos.filter((t) => !t.done);
+  const overdue = active.filter((t) => t.date && t.date < today);
+
+  el.statsCards.innerHTML = "";
+  for (const [label, value] of [
+    ["总任务", state.todos.length],
+    ["已完成", done.length],
+    ["未完成", active.length],
+    ["已过期", overdue.length],
+  ]) {
+    const card = document.createElement("div");
+    card.className = "stat-card";
+    card.innerHTML = `<div class="label"></div><div class="value"></div>`;
+    card.querySelector(".label").textContent = label;
+    card.querySelector(".value").textContent = value;
+    el.statsCards.appendChild(card);
+  }
+
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(dayKey(d.toISOString()));
+  }
+  const counts = days.map(
+    (day) => done.filter((t) => dayKey(t.completedAt) === day).length
+  );
+  const max = Math.max(1, ...counts);
+  const week = ["日", "一", "二", "三", "四", "五", "六"];
+
+  el.weekChart.innerHTML = "";
+  days.forEach((day, i) => {
+    const col = document.createElement("div");
+    col.className = "chart-col";
+    const n = counts[i];
+    col.innerHTML = `
+      <div class="chart-count"></div>
+      <div class="chart-bar-wrap"><div class="chart-bar"></div></div>
+      <div class="chart-day"></div>
+    `;
+    col.querySelector(".chart-count").textContent = n;
+    const bar = col.querySelector(".chart-bar");
+    if (!n) bar.classList.add("zero");
+    else bar.style.height = `${Math.max(8, Math.round((n / max) * 100))}%`;
+    const dt = new Date(day + "T12:00:00");
+    col.querySelector(".chart-day").textContent = week[dt.getDay()];
+    col.title = `${day}：完成 ${n} 条`;
+    el.weekChart.appendChild(col);
+  });
+
+  const byPriority = {
+    high: active.filter((t) => t.priority === "high").length,
+    medium: active.filter((t) => t.priority === "medium").length,
+    low: active.filter((t) => t.priority === "low").length,
+  };
+  const pMax = Math.max(1, ...Object.values(byPriority));
+  el.priorityBars.innerHTML = "";
+  for (const key of ["high", "medium", "low"]) {
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML = `
+      <span></span>
+      <div class="bar-track"><div class="bar-fill"></div></div>
+      <span class="bar-num"></span>
+    `;
+    row.children[0].textContent = PRIORITY_LABEL[key];
+    const fill = row.querySelector(".bar-fill");
+    fill.classList.add(key);
+    fill.style.width = `${Math.round((byPriority[key] / pMax) * 100)}%`;
+    row.querySelector(".bar-num").textContent = byPriority[key];
+    el.priorityBars.appendChild(row);
+  }
+}
+
 function render() {
   el.dateLine.textContent = formatDateLine();
   el.viewTitle.textContent = viewMeta[state.view].title;
@@ -410,14 +497,19 @@ function render() {
   });
 
   const isSettings = state.view === "settings";
+  const isStats = state.view === "stats";
+  const hideListChrome = isSettings || isStats;
+
   el.settingsView.hidden = !isSettings;
-  el.listView.hidden = isSettings;
-  el.composer.hidden = isSettings;
-  el.toolbar.hidden = isSettings;
-  el.hint.hidden = isSettings;
+  el.statsView.hidden = !isStats;
+  el.listView.hidden = hideListChrome;
+  el.composer.hidden = hideListChrome;
+  el.toolbar.hidden = hideListChrome;
+  el.hint.hidden = hideListChrome;
 
   updateStats();
-  if (!isSettings) renderList();
+  if (isStats) renderStats();
+  else if (!isSettings) renderList();
 }
 
 function openEdit(todo) {
@@ -452,6 +544,7 @@ async function addTodo() {
     date: el.date.value || null,
     done: false,
     createdAt: new Date().toISOString(),
+    completedAt: null,
   });
 
   if (!(await persist())) return;
@@ -625,9 +718,15 @@ function bindEvents() {
       }
       el.search.focus();
     }
-    if (mod && ["1", "2", "3", "4"].includes(e.key)) {
+    if (mod && ["1", "2", "3", "4", "5"].includes(e.key)) {
       e.preventDefault();
-      state.view = { "1": "today", "2": "all", "3": "done", "4": "due" }[e.key];
+      state.view = {
+        "1": "today",
+        "2": "all",
+        "3": "done",
+        "4": "due",
+        "5": "stats",
+      }[e.key];
       render();
     }
   });
