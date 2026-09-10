@@ -1,14 +1,16 @@
 # Focus Todo
 
-> **Focus Todo** — 只存在于本机的简洁桌面待办。  
+> **Focus Todo** — 只存在于本机的简洁待办。  
 > 不联网、不上传、无需账号。打开就能记，关掉数据还在本机。
 
-一个用 **Electron + 原生 HTML/CSS/JS** 写的桌面效率小应用，适合日常个人待办，也适合作为作品集项目展示。
+一个用 **Electron + Capacitor + 原生 HTML/CSS/JS** 写的效率小应用：  
+**Windows 桌面版** + **Android APK**，同一套界面。
 
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![electron](https://img.shields.io/badge/Electron-33-blue)
+![capacitor](https://img.shields.io/badge/Capacitor-6-blue)
 ![version](https://img.shields.io/badge/version-1.3.0-blue)
-![platform](https://img.shields.io/badge/platform-Windows-lightgrey)
+![platform](https://img.shields.io/badge/platform-Windows%20%7C%20Android-lightgrey)
 
 ## 名称说明
 
@@ -16,9 +18,9 @@
 |----|------|
 | 项目名 | Focus Todo |
 | 应用名 | Focus Todo |
-| 包名 | `focus-todo` |
-| 定位 | 本地优先的桌面待办（Local-first desktop todo） |
-| 一句话 | 专注今天该做的事，数据只留在你的电脑上 |
+| 包名 | `focus-todo` / `com.zcm08042.focustodo` |
+| 定位 | 本地优先待办（Local-first todo） |
+| 一句话 | 专注今天该做的事，数据只留在你的设备上 |
 
 ## 简介
 
@@ -52,18 +54,24 @@ Focus Todo 把「记事 → 排期 → 完成 → 复盘」收进一个安静的
 - 添加区：内容、优先级、日期  
 - 右上角一键切换深浅色  
 
-## 下载安装（Windows）
+## 下载安装
 
 发布页：https://github.com/zcm08042/focus-todo/releases  
 
-从 Release 下载安装包后双击安装，或克隆仓库后自行打包：
+| 平台 | 文件 | 说明 |
+|------|------|------|
+| Windows | `Focus Todo Setup 1.3.0.exe` | 双击安装 |
+| Android | `Focus-Todo-1.3.0-android.apk` | 允许安装未知来源后安装（debug 签名） |
+
+自行打包：
 
 ```powershell
 git clone https://github.com/zcm08042/focus-todo.git
 cd focus-todo
 npm install
-npm start          # 开发运行
-npm run dist       # 打包 Windows 安装包（输出到 dist/）
+npm start              # 桌面开发运行
+npm run dist           # Windows 安装包
+npm run apk:debug      # Android debug APK（需 JDK17 + Android SDK）
 ```
 
 ## 快速开始（开发）
@@ -72,6 +80,12 @@ npm run dist       # 打包 Windows 安装包（输出到 dist/）
 npm install
 npm start
 ```
+
+Android 需要本机已配置：
+
+- JDK 17  
+- `ANDROID_HOME` / `ANDROID_SDK_ROOT`  
+- 已接受 SDK licenses  
 
 ## 快捷键
 
@@ -84,9 +98,11 @@ npm start
 
 ## 技术栈
 
-- Electron 33  
+- Electron 33（桌面）  
+- Capacitor 6 + Android（移动端）  
 - 原生 HTML / CSS / JavaScript  
-- 主进程本地文件读写（`userData/todos.json`）  
+- 桌面：主进程本地 JSON（`userData`）  
+- 移动：localStorage 本地存储  
 - 渲染进程无 Node 权限（contextIsolation + preload）  
 
 ## 项目结构
@@ -95,12 +111,11 @@ npm start
 focus-todo/
 ├── main.js              # Electron 主进程
 ├── preload.js           # 安全桥接 IPC
-├── src/
-│   ├── index.html       # 界面结构
-│   ├── styles.css       # 样式与主题
-│   └── renderer.js      # 交互逻辑
+├── src/                 # 共享 Web UI（桌面 + Android）
+├── android/             # Capacitor Android 工程
 ├── assets/
 │   └── icon.png         # 应用图标
+├── capacitor.config.ts
 ├── package.json
 └── README.md
 ```

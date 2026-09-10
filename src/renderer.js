@@ -6,6 +6,56 @@ const EMPTY_FILTERED = {
   desc: "试试调整搜索词或筛选条件",
 };
 
+// Electron preload 提供 window.api；移动端/网页用 localStorage 兜底
+if (!window.api) {
+  const KEY = "focus-todo-todos";
+  window.api = {
+    async loadTodos() {
+      try {
+        return JSON.parse(localStorage.getItem(KEY) || "[]");
+      } catch {
+        return [];
+      }
+    },
+    async saveTodos(todos) {
+      localStorage.setItem(KEY, JSON.stringify(todos));
+      return { ok: true, todos };
+    },
+    async exportTodos() {
+      const todos = await this.loadTodos();
+      const blob = new Blob([JSON.stringify(todos, null, 2)], {
+        type: "application/json",
+      });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "focus-todo-backup.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      return { ok: true, count: todos.length };
+    },
+    async importTodos() {
+      return new Promise((resolve) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json,.json";
+        input.onchange = async () => {
+          const file = input.files?.[0];
+          if (!file) return resolve({ ok: false, canceled: true });
+          try {
+            const data = JSON.parse(await file.text());
+            if (!Array.isArray(data)) throw new Error("bad");
+            localStorage.setItem(KEY, JSON.stringify(data));
+            resolve({ ok: true, todos: data });
+          } catch {
+            resolve({ ok: false, error: "文件格式不正确" });
+          }
+        };
+        input.click();
+      });
+    },
+  };
+}
+
 const state = {
   todos: [],
   view: "today",
