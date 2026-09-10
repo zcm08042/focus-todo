@@ -49,6 +49,7 @@ const el = {
   navCountToday: document.getElementById("navCountToday"),
   navCountAll: document.getElementById("navCountAll"),
   navCountDone: document.getElementById("navCountDone"),
+  navCountDue: document.getElementById("navCountDue"),
   themeBtn: document.getElementById("themeBtn"),
   themeSelect: document.getElementById("themeSelect"),
   defaultView: document.getElementById("defaultView"),
@@ -85,6 +86,11 @@ const viewMeta = {
     title: "已完成",
     emptyTitle: "还没有完成的任务",
     emptyDesc: "完成后会出现在这里",
+  },
+  due: {
+    title: "到期",
+    emptyTitle: "没有到期任务",
+    emptyDesc: "给待办设置日期后，会出现在这里",
   },
   settings: { title: "设置" },
 };
@@ -213,6 +219,9 @@ function baseTodosForView() {
   if (state.view === "all") {
     return state.todos.filter((t) => !t.done);
   }
+  if (state.view === "due") {
+    return state.todos.filter((t) => !t.done && t.date);
+  }
   return [];
 }
 
@@ -226,12 +235,14 @@ function visibleTodos() {
 
 function updateStats() {
   const today = todayISO();
+  const dueCount = state.todos.filter((t) => !t.done && t.date && t.date <= today).length;
   el.navCountToday.textContent =
     String(state.todos.filter((t) => !t.done && t.date === today).length) || "";
   el.navCountAll.textContent =
     String(state.todos.filter((t) => !t.done).length) || "";
   el.navCountDone.textContent =
     String(state.todos.filter((t) => t.done).length) || "";
+  el.navCountDue.textContent = String(dueCount) || "";
 
   if (state.view === "settings") {
     el.statLabel.textContent = "本地存储";
@@ -327,10 +338,15 @@ function createTodoItem(todo, today) {
 }
 
 function renderList() {
-  const todos = visibleTodos();
   const today = todayISO();
   el.list.innerHTML = "";
 
+  if (state.view === "due") {
+    renderDueList(today);
+    return;
+  }
+
+  const todos = visibleTodos();
   if (!todos.length) {
     const meta = viewMeta[state.view];
     const filtered = hasActiveFilter();
@@ -343,6 +359,45 @@ function renderList() {
   el.empty.hidden = true;
   for (const todo of todos) {
     el.list.appendChild(createTodoItem(todo, today));
+  }
+}
+
+function renderDueList(today) {
+  const todos = visibleTodos().sort((a, b) =>
+    a.date === b.date
+      ? a.createdAt < b.createdAt
+        ? 1
+        : -1
+      : a.date < b.date
+        ? -1
+        : 1
+  );
+
+  if (!todos.length) {
+    const meta = viewMeta.due;
+    const filtered = hasActiveFilter();
+    el.empty.hidden = false;
+    el.emptyTitle.textContent = filtered ? EMPTY_FILTERED.title : meta.emptyTitle;
+    el.emptyDesc.textContent = filtered ? EMPTY_FILTERED.desc : meta.emptyDesc;
+    return;
+  }
+
+  el.empty.hidden = true;
+  const groups = [
+    { key: "overdue", label: "已过期", items: todos.filter((t) => t.date < today) },
+    { key: "today", label: "今天", items: todos.filter((t) => t.date === today) },
+    { key: "upcoming", label: "以后", items: todos.filter((t) => t.date > today) },
+  ];
+
+  for (const group of groups) {
+    if (!group.items.length) continue;
+    const label = document.createElement("li");
+    label.className = "group-label" + (group.key === "overdue" ? " overdue" : "");
+    label.textContent = `${group.label} · ${group.items.length}`;
+    el.list.appendChild(label);
+    for (const todo of group.items) {
+      el.list.appendChild(createTodoItem(todo, today));
+    }
   }
 }
 
@@ -570,9 +625,9 @@ function bindEvents() {
       }
       el.search.focus();
     }
-    if (mod && ["1", "2", "3"].includes(e.key)) {
+    if (mod && ["1", "2", "3", "4"].includes(e.key)) {
       e.preventDefault();
-      state.view = { "1": "today", "2": "all", "3": "done" }[e.key];
+      state.view = { "1": "today", "2": "all", "3": "done", "4": "due" }[e.key];
       render();
     }
   });

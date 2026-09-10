@@ -31,6 +31,10 @@
           <span class="nav-icon">☰</span>全部
           <span class="nav-count" id="navCountAll"></span>
         </button>
+        <button class="nav-item" data-view="due" type="button">
+          <span class="nav-icon">▣</span>到期
+          <span class="nav-count" id="navCountDue"></span>
+        </button>
         <button class="nav-item" data-view="done" type="button">
           <span class="nav-icon">✓</span>已完成
           <span class="nav-count" id="navCountDone"></span>
@@ -148,14 +152,14 @@
             <div><kbd>Enter</kbd><span>添加待办</span></div>
             <div><kbd>Ctrl/Cmd + N</kbd><span>聚焦输入框</span></div>
             <div><kbd>Ctrl/Cmd + F</kbd><span>聚焦搜索</span></div>
-            <div><kbd>Ctrl/Cmd + 1/2/3</kbd><span>切换视图</span></div>
+            <div><kbd>Ctrl/Cmd + 1/2/3/4</kbd><span>切换 今日/全部/已完成/到期</span></div>
             <div><kbd>Esc</kbd><span>关闭弹窗</span></div>
           </div>
         </div>
 
         <div class="card">
           <h2>关于</h2>
-          <p class="muted">Focus Todo · 版本 1.1.1</p>
+          <p class="muted">Focus Todo · 版本 1.2.0</p>
           <p class="muted">Electron 桌面应用 · 本地存储 · 无需账号</p>
         </div>
       </section>

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, Notification } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
@@ -80,10 +80,29 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+  notifyDueOnStart();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
+
+function notifyDueOnStart() {
+  if (!Notification.isSupported()) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const due = loadTodos().filter(
+    (t) => !t.done && t.date && t.date <= today
+  );
+  if (!due.length) return;
+  const overdue = due.filter((t) => t.date < today).length;
+  const todayCount = due.length - overdue;
+  const parts = [];
+  if (overdue) parts.push(`${overdue} 条已过期`);
+  if (todayCount) parts.push(`${todayCount} 条今天到期`);
+  new Notification({
+    title: "Focus Todo",
+    body: parts.join("，") + "，打开应用查看。",
+  }).show();
+}
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();

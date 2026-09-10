@@ -722,3 +722,16 @@ dialog::backdrop {
 
   .item-actions { opacity: 1; }
 }
+
+/* Due groups */
+.group-label {
+  margin: 14px 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.2px;
+}
+
+.group-label.overdue {
+  color: var(--danger);
+}
