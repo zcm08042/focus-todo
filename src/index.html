@@ -11,23 +11,41 @@
   <div id="app">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">F</div>
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <div>
           <div class="brand-name">Focus Todo</div>
-          <div class="brand-sub">本地待办</div>
+          <div class="brand-sub">本地待办 · 不上传</div>
         </div>
       </div>
 
-      <nav class="nav" id="nav">
-        <button class="nav-item active" data-view="today">今日</button>
-        <button class="nav-item" data-view="all">全部</button>
-        <button class="nav-item" data-view="done">已完成</button>
-        <button class="nav-item" data-view="settings">设置</button>
+      <nav class="nav" id="nav" aria-label="主导航">
+        <button class="nav-item active" data-view="today" type="button">
+          <span class="nav-icon">◎</span>今日
+          <span class="nav-count" id="navCountToday"></span>
+        </button>
+        <button class="nav-item" data-view="all" type="button">
+          <span class="nav-icon">☰</span>全部
+          <span class="nav-count" id="navCountAll"></span>
+        </button>
+        <button class="nav-item" data-view="done" type="button">
+          <span class="nav-icon">✓</span>已完成
+          <span class="nav-count" id="navCountDone"></span>
+        </button>
+        <button class="nav-item" data-view="settings" type="button">
+          <span class="nav-icon">⚙</span>设置
+        </button>
       </nav>
 
       <div class="sidebar-foot">
         <div class="stat-label" id="statLabel">今日完成</div>
         <div class="stat-value" id="statValue">0 / 0</div>
+        <div class="progress" aria-hidden="true">
+          <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+        </div>
       </div>
     </aside>
 
@@ -38,27 +56,49 @@
           <p class="date-line" id="dateLine"></p>
         </div>
         <div class="top-actions">
-          <button class="icon-btn" id="themeBtn" title="切换外观">◐</button>
+          <button class="icon-btn" id="themeBtn" type="button" title="切换外观" aria-label="切换外观">◐</button>
         </div>
       </header>
 
       <section class="composer" id="composer">
-        <input id="input" type="text" maxlength="200" placeholder="添加一项待办…" autocomplete="off" />
-        <select id="priority" title="优先级">
-          <option value="high">高</option>
-          <option value="medium" selected>中</option>
-          <option value="low">低</option>
-        </select>
-        <input id="date" type="date" title="日期" />
-        <button id="addBtn" class="primary-btn">添加</button>
+        <div class="composer-main">
+          <input id="input" type="text" maxlength="200" placeholder="添加一项待办…  Enter 确认" autocomplete="off" />
+        </div>
+        <div class="composer-side">
+          <select id="priority" title="优先级" aria-label="优先级">
+            <option value="high">高</option>
+            <option value="medium" selected>中</option>
+            <option value="low">低</option>
+          </select>
+          <input id="date" type="date" title="日期" aria-label="日期" />
+          <button id="addBtn" class="primary-btn" type="button">添加</button>
+        </div>
       </section>
 
-      <p class="hint" id="hint"></p>
+      <p class="hint" id="hint" role="status" aria-live="polite"></p>
+
+      <section class="toolbar" id="toolbar">
+        <label class="search-box">
+          <span aria-hidden="true">⌕</span>
+          <input id="search" type="search" placeholder="搜索待办…" autocomplete="off" />
+        </label>
+        <div class="filters" id="filters" role="group" aria-label="优先级筛选">
+          <button type="button" class="filter-chip active" data-priority="all">全部</button>
+          <button type="button" class="filter-chip" data-priority="high">高</button>
+          <button type="button" class="filter-chip" data-priority="medium">中</button>
+          <button type="button" class="filter-chip" data-priority="low">低</button>
+        </div>
+        <select id="sort" class="sort-select" title="排序" aria-label="排序">
+          <option value="created">最近添加</option>
+          <option value="priority">优先级</option>
+          <option value="date">日期</option>
+        </select>
+      </section>
 
       <section class="list-wrap" id="listView">
         <ul class="todo-list" id="list"></ul>
         <div class="empty" id="empty" hidden>
-          <div class="empty-icon">✓</div>
+          <div class="empty-icon" aria-hidden="true">✓</div>
           <p class="empty-title" id="emptyTitle">今天还没有待办</p>
           <p class="empty-desc" id="emptyDesc">从上面添加一项开始吧</p>
         </div>
@@ -94,19 +134,29 @@
 
         <div class="card">
           <h2>本地数据</h2>
-          <p class="muted">保存在本机，不会上传。</p>
+          <p class="muted">保存在本机，不会上传。可随时导出备份。</p>
           <div class="btn-row">
-            <button class="ghost-btn" id="exportBtn">导出为 JSON</button>
-            <button class="ghost-btn" id="importBtn">从 JSON 导入</button>
-            <button class="danger-btn" id="clearDoneBtn">清空已完成任务</button>
+            <button class="ghost-btn" id="exportBtn" type="button">导出为 JSON</button>
+            <button class="ghost-btn" id="importBtn" type="button">从 JSON 导入</button>
+            <button class="danger-btn" id="clearDoneBtn" type="button">清空已完成任务</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>快捷键</h2>
+          <div class="key-grid">
+            <div><kbd>Enter</kbd><span>添加待办</span></div>
+            <div><kbd>Ctrl/Cmd + N</kbd><span>聚焦输入框</span></div>
+            <div><kbd>Ctrl/Cmd + F</kbd><span>聚焦搜索</span></div>
+            <div><kbd>Ctrl/Cmd + 1/2/3</kbd><span>切换视图</span></div>
+            <div><kbd>Esc</kbd><span>关闭弹窗</span></div>
           </div>
         </div>
 
         <div class="card">
           <h2>关于</h2>
-          <p class="muted">版本 1.0.0</p>
-          <p class="muted">本地存储 · 无需账号</p>
-          <p class="muted keys">Enter 添加 · Ctrl+N 聚焦 · Esc 关闭弹窗</p>
+          <p class="muted">Focus Todo · 版本 1.1.0</p>
+          <p class="muted">Electron 桌面应用 · 本地存储 · 无需账号</p>
         </div>
       </section>
     </main>
@@ -149,7 +199,7 @@
     </form>
   </dialog>
 
-  <div class="toast" id="toast" hidden></div>
+  <div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
 
   <script src="renderer.js"></script>
 </body>
