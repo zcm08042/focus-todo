@@ -60,7 +60,7 @@ Focus Todo 把「记事 → 排期 → 完成 → 复盘」收进一个安静的
 
 | 平台 | 文件 | 说明 |
 |------|------|------|
-| Windows | `Focus Todo Setup 1.3.0.exe` | 双击安装 |
+| Windows | `Focus.Todo.Setup.1.3.0.exe` | 双击安装 |
 | Android | `Focus-Todo-1.3.0-android.apk` | 允许安装未知来源后安装（debug 签名） |
 
 自行打包：
